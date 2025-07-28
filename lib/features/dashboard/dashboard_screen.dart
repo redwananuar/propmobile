@@ -93,150 +93,43 @@ class DashboardScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(
-                                  Icons.person_outline,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Welcome back,',
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.8),
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      technicianName,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.person_outline,
+                              color: Colors.white,
+                              size: 24,
+                            ),
                           ),
-                          const SizedBox(height: 24),
-                          // Stat Cards Grid
-                          completedJobsCountAsync.when(
-                            data: (count) => activeWorkOrdersAsync.when(
-                              data: (activeWorkOrders) => GridView.count(
-                                crossAxisCount: 2,
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                mainAxisSpacing: 16,
-                                crossAxisSpacing: 16,
-                                childAspectRatio: 1.8,
-                                children: [
-                                  _StatCard(
-                                    title: 'Completed Jobs',
-                                    value: count.toString(),
-                                    icon: Icons.check_circle_outline,
-                                    color: const Color(0xFF10B981),
-                                    gradient: const LinearGradient(
-                                      colors: [Color(0xFF10B981), Color(0xFF059669)],
-                                    ),
-                                  ),
-                                  _StatCard(
-                                    title: 'Active Jobs',
-                                    value: activeWorkOrders.length.toString(),
-                                    icon: Icons.work_outline,
-                                    color: const Color(0xFFF59E0B),
-                                    gradient: const LinearGradient(
-                                      colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-                                    ),
-                                  ),
-                                  _StatCard(
-                                    title: 'Leave',
-                                    value: '2', // Placeholder value
-                                    icon: Icons.beach_access_outlined,
-                                    color: const Color(0xFF6366F1),
-                                    gradient: const LinearGradient(
-                                      colors: [Color(0xFF6366F1), Color(0xFF818CF8)],
-                                    ),
-                                  ),
-                                  _StatCard(
-                                    title: 'Booking',
-                                    value: '1', // Placeholder value
-                                    icon: Icons.event_available_outlined,
-                                    color: const Color(0xFFEC4899),
-                                    gradient: const LinearGradient(
-                                      colors: [Color(0xFFEC4899), Color(0xFFF472B6)],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              loading: () => GridView.count(
-                                crossAxisCount: 2,
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                mainAxisSpacing: 16,
-                                crossAxisSpacing: 16,
-                                childAspectRatio: 1.8,
-                                children: [
-                                  _StatCardSkeleton(),
-                                  _StatCardSkeleton(),
-                                  _StatCardSkeleton(),
-                                  _StatCardSkeleton(),
-                                ],
-                              ),
-                              error: (_, __) => GridView.count(
-                                crossAxisCount: 2,
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                mainAxisSpacing: 16,
-                                crossAxisSpacing: 16,
-                                childAspectRatio: 1.8,
-                                children: [
-                                  _StatCardSkeleton(),
-                                  _StatCardSkeleton(),
-                                  _StatCardSkeleton(),
-                                  _StatCardSkeleton(),
-                                ],
-                              ),
-                            ),
-                            loading: () => GridView.count(
-                              crossAxisCount: 2,
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              mainAxisSpacing: 16,
-                              crossAxisSpacing: 16,
-                              childAspectRatio: 1.8,
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _StatCardSkeleton(),
-                                _StatCardSkeleton(),
-                                _StatCardSkeleton(),
-                                _StatCardSkeleton(),
+                                Text(
+                                  'Welcome back,',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.8),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  technicianName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ],
-                            ),
-                            error: (_, __) => Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.red[50],
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Text('Error loading statistics'),
                             ),
                           ),
                         ],
@@ -270,6 +163,79 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
+
+                // Statistics Section
+                Text(
+                  'Overview',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF1E293B),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                completedJobsCountAsync.when(
+                  data: (count) => activeWorkOrdersAsync.when(
+                    data: (activeWorkOrders) => Row(
+                      children: [
+                        Expanded(
+                          child: _StatCard(
+                            title: 'Completed Jobs',
+                            value: count.toString(),
+                            icon: Icons.check_circle_outline,
+                            color: const Color(0xFF10B981),
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF10B981), Color(0xFF059669)],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _StatCard(
+                            title: 'Active Jobs',
+                            value: activeWorkOrders.length.toString(),
+                            icon: Icons.work_outline,
+                            color: const Color(0xFFF59E0B),
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    loading: () => Row(
+                      children: [
+                        Expanded(child: _StatCardSkeleton()),
+                        const SizedBox(width: 16),
+                        Expanded(child: _StatCardSkeleton()),
+                      ],
+                    ),
+                    error: (_, __) => Row(
+                      children: [
+                        Expanded(child: _StatCardSkeleton()),
+                        const SizedBox(width: 16),
+                        Expanded(child: _StatCardSkeleton()),
+                      ],
+                    ),
+                  ),
+                  loading: () => Row(
+                    children: [
+                      Expanded(child: _StatCardSkeleton()),
+                      const SizedBox(width: 16),
+                      Expanded(child: _StatCardSkeleton()),
+                    ],
+                  ),
+                  error: (_, __) => Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.red[50],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text('Error loading statistics'),
+                  ),
+                ),
+                const SizedBox(height: 32),
 
                 // Quick Actions
                 Text(
@@ -336,7 +302,7 @@ class DashboardScreen extends ConsumerWidget {
                   data: (completedJobs) {
                     if (completedJobs.isEmpty) {
                       return Container(
-                        padding: const EdgeInsets.all(32),
+                        padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
@@ -353,14 +319,14 @@ class DashboardScreen extends ConsumerWidget {
                             Text(
                               'No completed jobs yet',
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
                                 color: Colors.grey[600],
                               ),
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Complete your first job to see it here',
+                              'Completed jobs will appear here',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey[500],
@@ -373,23 +339,21 @@ class DashboardScreen extends ConsumerWidget {
                     }
 
                     return Column(
-                      children: completedJobs.take(3).map((workOrder) => 
-                        _CompletedJobCard(workOrder: workOrder)
-                      ).toList(),
+                      children: completedJobs.take(3).map((job) {
+                        return _CompletedJobCard(workOrder: job);
+                      }).toList(),
                     );
                   },
                   loading: () => Column(
-                    children: List.generate(3, (index) => 
-                      _CompletedJobCardSkeleton()
-                    ),
+                    children: List.generate(3, (index) => _CompletedJobCardSkeleton()),
                   ),
-                  error: (_, __) => Container(
+                  error: (error, stack) => Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.red[50],
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Text('Error loading completed jobs'),
+                    child: Text('Error loading completed jobs: $error'),
                   ),
                 ),
               ],
