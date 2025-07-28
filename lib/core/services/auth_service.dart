@@ -93,15 +93,28 @@ class AuthService {
     }
   }
 
-  // Get current user's technician contact ID
+  // Get current user's technician ID
   Future<String?> getCurrentUserTechnicianId() async {
     try {
-      final email = currentUserEmail;
-      if (email == null) return null;
+      final user = _supabase.auth.currentUser;
+      if (user == null) return null;
       
-      return await _contactsService.getTechnicianContactId(email);
+      return await _contactsService.getTechnicianContactId(user.email!);
     } catch (e) {
       return null;
+    }
+  }
+
+  // Update password
+  Future<void> updatePassword(String currentPassword, String newPassword) async {
+    try {
+      await _supabase.auth.updateUser(
+        UserAttributes(
+          password: newPassword,
+        ),
+      );
+    } catch (e) {
+      throw Exception('Failed to update password: $e');
     }
   }
 } 

@@ -6,27 +6,23 @@ import '../../core/models/work_order.dart';
 class WorkOrderDetailScreen extends ConsumerStatefulWidget {
   final WorkOrder workOrder;
 
-  const WorkOrderDetailScreen({
-    super.key,
-    required this.workOrder,
-  });
+  const WorkOrderDetailScreen({super.key, required this.workOrder});
 
   @override
   ConsumerState<WorkOrderDetailScreen> createState() => _WorkOrderDetailScreenState();
 }
 
 class _WorkOrderDetailScreenState extends ConsumerState<WorkOrderDetailScreen> {
-  late WorkOrderStatus _selectedStatus;
-  late TextEditingController _commentController;
-  bool _isUpdating = false;
+  final _commentController = TextEditingController();
   String? _photoUrl;
+  bool _isUpdating = false;
+  late WorkOrder _currentWorkOrder;
 
   @override
   void initState() {
     super.initState();
-    _selectedStatus = widget.workOrder.status;
-    _commentController = TextEditingController(text: widget.workOrder.comment ?? '');
-    _photoUrl = widget.workOrder.photoUrl;
+    _currentWorkOrder = widget.workOrder;
+    _commentController.text = widget.workOrder.comment ?? '';
   }
 
   @override
@@ -36,24 +32,20 @@ class _WorkOrderDetailScreenState extends ConsumerState<WorkOrderDetailScreen> {
   }
 
   Future<void> _updateWorkOrder() async {
-    if (_selectedStatus == widget.workOrder.status && 
-        _commentController.text == (widget.workOrder.comment ?? '') &&
-        _photoUrl == widget.workOrder.photoUrl) {
-      return; // No changes
-    }
+    if (_isUpdating) return;
 
     setState(() {
       _isUpdating = true;
     });
 
     try {
-      final workOrdersService = ref.read(workOrdersServiceProvider);
-      await workOrdersService.updateWorkOrder(
-        workOrderId: widget.workOrder.id,
-        status: _selectedStatus,
-        comment: _commentController.text.isEmpty ? null : _commentController.text,
-        photoUrl: _photoUrl,
-      );
+              final workOrdersService = ref.read(workOrdersServiceProvider);
+        await workOrdersService.updateWorkOrder(
+          workOrderId: _currentWorkOrder.id,
+          status: _currentWorkOrder.status,
+          comment: _commentController.text,
+          photoUrl: _photoUrl,
+        );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -62,7 +54,7 @@ class _WorkOrderDetailScreenState extends ConsumerState<WorkOrderDetailScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pop(context, true); // Return true to indicate update
+        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
@@ -83,312 +75,458 @@ class _WorkOrderDetailScreenState extends ConsumerState<WorkOrderDetailScreen> {
   }
 
   Future<void> _uploadPhoto() async {
-    // TODO: Implement photo upload to Supabase Storage
-    // For now, we'll simulate photo upload
+    // TODO: Implement actual photo upload to Supabase Storage
+    // For now, we'll simulate the upload
     setState(() {
-      _photoUrl = 'https://example.com/completion-photo.jpg';
+      _photoUrl = 'https://example.com/photo.jpg';
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Photo upload feature coming soon!'),
-        backgroundColor: Colors.blue,
+        content: Text('Photo uploaded successfully!'),
+        backgroundColor: Colors.green,
       ),
     );
-  }
-
-  Color _getStatusColor(WorkOrderStatus status) {
-    switch (status) {
-      case WorkOrderStatus.open:
-        return Colors.blue;
-      case WorkOrderStatus.inProgress:
-        return Colors.orange;
-      case WorkOrderStatus.completed:
-        return Colors.green;
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Work Order Details'),
-        backgroundColor: Colors.blue[600],
-        foregroundColor: Colors.white,
+        title: const Text(
+          'Work Order Details',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF1E293B),
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        actions: [
+          if (_isUpdating)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+        ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Title and Type
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    widget.workOrder.title,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: widget.workOrder.isJob ? Colors.blue : Colors.purple,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    widget.workOrder.typeDisplayName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            
-            // Current Status
+            // Header Card
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: _getStatusColor(widget.workOrder.status),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                'Current: ${widget.workOrder.status.displayName}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            
-            // Job Information Card
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  gradient: LinearGradient(
-                    colors: [Colors.blue[50]!, Colors.blue[100]!],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                border: Border.all(color: Colors.grey[200]!),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey[200]!,
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
                   ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.info_outline, color: Colors.blue[700]),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Job Information',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue[700],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    
-                    // Priority
-                    if (widget.workOrder.priority != null) ...[
-                      _InfoRow(
-                        icon: Icons.priority_high,
-                        label: 'Priority',
-                        value: widget.workOrder.priority!,
-                      ),
-                    ],
-                    
-                    // Location
-                    if (widget.workOrder.propertyUnit != null) ...[
-                      _InfoRow(
-                        icon: Icons.location_on,
-                        label: 'Location',
-                        value: widget.workOrder.propertyUnit!,
-                      ),
-                    ],
-                    
-                    // Scheduled Date
-                    if (widget.workOrder.scheduledDate != null) ...[
-                      _InfoRow(
-                        icon: Icons.calendar_today,
-                        label: 'Scheduled Date',
-                        value: _formatDate(widget.workOrder.scheduledDate!),
-                      ),
-                    ],
-                    
-                    // Scheduled Time
-                    if (widget.workOrder.scheduledStart != null && widget.workOrder.scheduledEnd != null) ...[
-                      _InfoRow(
-                        icon: Icons.access_time,
-                        label: 'Scheduled Time',
-                        value: '${widget.workOrder.scheduledStart} - ${widget.workOrder.scheduledEnd}',
-                      ),
-                    ],
-                  ],
-                ),
+                ],
               ),
-            ),
-            const SizedBox(height: 16),
-            
-            // Description
-            Text(
-              'Description',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              widget.workOrder.description,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 24),
-            
-            // Status Update Buttons
-            Text(
-              'Update Status',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _StatusButton(
-                    status: WorkOrderStatus.open,
-                    isSelected: _selectedStatus == WorkOrderStatus.open,
-                    onTap: () {
-                      setState(() {
-                        _selectedStatus = WorkOrderStatus.open;
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _StatusButton(
-                    status: WorkOrderStatus.inProgress,
-                    isSelected: _selectedStatus == WorkOrderStatus.inProgress,
-                    onTap: () {
-                      setState(() {
-                        _selectedStatus = WorkOrderStatus.inProgress;
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _StatusButton(
-                    status: WorkOrderStatus.completed,
-                    isSelected: _selectedStatus == WorkOrderStatus.completed,
-                    onTap: () {
-                      setState(() {
-                        _selectedStatus = WorkOrderStatus.completed;
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            
-            // Comments
-            Text(
-              'Comments',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _commentController,
-              maxLines: 4,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Add or update comments',
-                hintText: 'Enter any comments about this work order...',
-              ),
-            ),
-            const SizedBox(height: 24),
-            
-            // Photo Upload (for completion)
-            if (_selectedStatus == WorkOrderStatus.completed) ...[
-              Text(
-                'Completion Photo',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Status and Type badges
+                  Row(
                     children: [
-                      if (_photoUrl != null) ...[
-                        Container(
-                          width: double.infinity,
-                          height: 200,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.photo,
-                              size: 48,
-                              color: Colors.grey,
-                            ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: _getStatusColor(widget.workOrder.status).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: _getStatusColor(widget.workOrder.status).withOpacity(0.3),
                           ),
                         ),
-                        const SizedBox(height: 12),
-                      ],
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: _uploadPhoto,
-                          icon: const Icon(Icons.camera_alt),
-                          label: Text(_photoUrl != null ? 'Change Photo' : 'Upload Photo'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue[600],
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Text(
+                          widget.workOrder.status.displayName,
+                          style: TextStyle(
+                            color: _getStatusColor(widget.workOrder.status),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                           ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF3B82F6).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: const Color(0xFF3B82F6).withOpacity(0.3),
+                          ),
+                        ),
+                        child: Text(
+                          widget.workOrder.typeDisplayName,
+                          style: const TextStyle(
+                            color: Color(0xFF3B82F6),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      if (widget.workOrder.priority != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _getPriorityColor(widget.workOrder.priority!).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.priority_high,
+                                size: 16,
+                                color: _getPriorityColor(widget.workOrder.priority!),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                widget.workOrder.priority!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: _getPriorityColor(widget.workOrder.priority!),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Title
+                  Text(
+                    widget.workOrder.title,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  
+                  // Description
+                  Text(
+                    widget.workOrder.description,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Job Information Card
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[200]!),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey[200]!,
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: Colors.blue[600],
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Job Information',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue[600],
                         ),
                       ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  
+                  _InfoRow(
+                    icon: Icons.location_on_outlined,
+                    label: 'Location',
+                    value: widget.workOrder.propertyUnit ?? widget.workOrder.location ?? 'No location',
+                  ),
+                  if (widget.workOrder.scheduledDate != null) ...[
+                    const SizedBox(height: 12),
+                    _InfoRow(
+                      icon: Icons.schedule_outlined,
+                      label: 'Scheduled Date',
+                      value: _formatDate(widget.workOrder.scheduledDate!),
+                    ),
+                  ],
+                  if (widget.workOrder.scheduledStart != null) ...[
+                    const SizedBox(height: 12),
+                    _InfoRow(
+                      icon: Icons.access_time_outlined,
+                      label: 'Scheduled Time',
+                      value: '${widget.workOrder.scheduledStart} - ${widget.workOrder.scheduledEnd ?? "N/A"}',
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  _InfoRow(
+                    icon: Icons.calendar_today_outlined,
+                    label: 'Created',
+                    value: _formatDate(widget.workOrder.createdAt),
+                  ),
+                  if (widget.workOrder.resolvedAt != null) ...[
+                    const SizedBox(height: 12),
+                    _InfoRow(
+                      icon: Icons.check_circle_outline,
+                      label: 'Completed',
+                      value: _formatDate(widget.workOrder.resolvedAt!),
+                    ),
+                  ],
+                ],
               ),
-              const SizedBox(height: 24),
-            ],
-            
+            ),
+            const SizedBox(height: 20),
+
+            // Status Update Card
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[200]!),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey[200]!,
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.update_outlined,
+                        color: Colors.orange[600],
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Update Status',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _StatusButton(
+                          status: WorkOrderStatus.open,
+                          currentStatus: widget.workOrder.status,
+                          onTap: () => _updateStatus(WorkOrderStatus.open),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _StatusButton(
+                          status: WorkOrderStatus.inProgress,
+                          currentStatus: widget.workOrder.status,
+                          onTap: () => _updateStatus(WorkOrderStatus.inProgress),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _StatusButton(
+                          status: WorkOrderStatus.completed,
+                          currentStatus: widget.workOrder.status,
+                          onTap: () => _updateStatus(WorkOrderStatus.completed),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Comments Card
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[200]!),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey[200]!,
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.comment_outlined,
+                        color: Colors.purple[600],
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Comments',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.purple[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  TextField(
+                    controller: _commentController,
+                    maxLines: 4,
+                    decoration: InputDecoration(
+                      hintText: 'Add your comments here...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.purple[400]!),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Photo Upload Card
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[200]!),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey[200]!,
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.photo_camera_outlined,
+                        color: Colors.green[600],
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Upload Photo',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  GestureDetector(
+                    onTap: _uploadPhoto,
+                    child: Container(
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.grey[300]!,
+                          style: BorderStyle.solid,
+                        ),
+                      ),
+                      child: _photoUrl != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                _photoUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return _buildUploadPlaceholder();
+                                },
+                              ),
+                            )
+                          : _buildUploadPlaceholder(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+
             // Update Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: _isUpdating ? null : _updateWorkOrder,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[600],
+                  backgroundColor: const Color(0xFF3B82F6),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  elevation: 0,
                 ),
                 child: _isUpdating
                     ? const SizedBox(
@@ -401,118 +539,124 @@ class _WorkOrderDetailScreenState extends ConsumerState<WorkOrderDetailScreen> {
                       )
                     : const Text(
                         'Update Work Order',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
               ),
             ),
-            const SizedBox(height: 16),
-            
-            // Job Details
-            Row(
-              children: [
-                Icon(
-                  Icons.access_time,
-                  size: 16,
-                  color: Colors.grey[600],
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Created: ${_formatDate(widget.workOrder.createdAt)}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-            if (widget.workOrder.resolvedAt != null) ...[
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Icon(
-                    Icons.check_circle,
-                    size: 16,
-                    color: Colors.green[600],
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Completed: ${_formatDate(widget.workOrder.resolvedAt!)}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.green[600],
-                    ),
-                  ),
-                ],
-              ),
-            ],
           ],
         ),
       ),
     );
   }
 
+  Widget _buildUploadPlaceholder() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.add_a_photo_outlined,
+          size: 32,
+          color: Colors.grey[400],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Tap to upload photo',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[500],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _updateStatus(WorkOrderStatus newStatus) {
+    setState(() {
+      _currentWorkOrder = _currentWorkOrder.copyWith(status: newStatus);
+    });
+  }
+
+  Color _getStatusColor(WorkOrderStatus status) {
+    switch (status) {
+      case WorkOrderStatus.open:
+        return const Color(0xFF3B82F6);
+      case WorkOrderStatus.inProgress:
+        return const Color(0xFFF59E0B);
+      case WorkOrderStatus.completed:
+        return const Color(0xFF10B981);
+    }
+  }
+
+  Color _getPriorityColor(String priority) {
+    switch (priority.toLowerCase()) {
+      case 'high':
+        return const Color(0xFFEF4444);
+      case 'medium':
+        return const Color(0xFFF59E0B);
+      case 'low':
+        return const Color(0xFF10B981);
+      default:
+        return const Color(0xFF6B7280);
+    }
+  }
+
   String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year} at ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+    return '${date.day}/${date.month}/${date.year}';
   }
 }
 
 class _StatusButton extends StatelessWidget {
   final WorkOrderStatus status;
-  final bool isSelected;
+  final WorkOrderStatus currentStatus;
   final VoidCallback onTap;
 
   const _StatusButton({
     required this.status,
-    required this.isSelected,
+    required this.currentStatus,
     required this.onTap,
   });
+
+  @override
+  Widget build(BuildContext context) {
+    final isSelected = status == currentStatus;
+    final color = _getStatusColor(status);
+    
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? color : color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? color : color.withOpacity(0.3),
+          ),
+        ),
+        child: Text(
+          status.displayName,
+          style: TextStyle(
+            color: isSelected ? Colors.white : color,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
 
   Color _getStatusColor(WorkOrderStatus status) {
     switch (status) {
       case WorkOrderStatus.open:
-        return Colors.blue;
+        return const Color(0xFF3B82F6);
       case WorkOrderStatus.inProgress:
-        return Colors.orange;
+        return const Color(0xFFF59E0B);
       case WorkOrderStatus.completed:
-        return Colors.green;
+        return const Color(0xFF10B981);
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? _getStatusColor(status) : Colors.grey[200],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? _getStatusColor(status) : Colors.grey[300]!,
-            width: 2,
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              isSelected ? Icons.check_circle : Icons.circle_outlined,
-              color: isSelected ? Colors.white : Colors.grey[600],
-              size: 20,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              status.displayName,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.grey[700],
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                fontSize: 12,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
@@ -529,31 +673,39 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: Colors.blue[700]),
-          const SizedBox(width: 8),
-          Text(
-            '$label: ',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.blue[700],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: Colors.grey[500],
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[500],
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 } 

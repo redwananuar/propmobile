@@ -7,17 +7,24 @@ class WorkOrdersService {
   final SupabaseClient _supabase = SupabaseConfig.client;
   final ContactsService _contactsService = ContactsService();
 
-  // Get work orders for technician by email
+  // Get work orders for a technician by email (only open and in-progress)
   Future<List<WorkOrder>> getWorkOrdersForTechnicianByEmail(String email) async {
     try {
-      // First get the technician's contact ID
       final contactId = await _contactsService.getTechnicianContactId(email);
       if (contactId == null) {
         throw Exception('Technician not found');
       }
 
-      // Then get work orders using the contact ID
-      return await getWorkOrdersForTechnician(contactId);
+      final response = await _supabase
+          .from('work_order')
+          .select()
+          .eq('technicianId', contactId)
+          .inFilter('status', ['open', 'in-progress']) // Only open and in-progress jobs
+          .order('createdAt', ascending: false);
+
+      return (response as List)
+          .map((json) => WorkOrder.fromJson(json as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       throw Exception('Failed to fetch work orders: $e');
     }
@@ -47,7 +54,7 @@ class WorkOrdersService {
           .select()
           .eq('technicianId', technicianId)
           .eq('status', 'completed')
-          .order('completionTime', ascending: false);
+          .order('resolvedAt', ascending: false);
 
       return (response as List)
           .map((json) => WorkOrder.fromJson(json))

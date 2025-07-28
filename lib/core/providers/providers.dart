@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/auth_service.dart';
 import '../services/work_orders_service.dart';
 import '../services/contacts_service.dart';
+import '../models/work_order.dart';
 
 // Auth Service Provider
 final authServiceProvider = Provider<AuthService>((ref) {
@@ -37,8 +38,14 @@ final currentUserTechnicianIdProvider = FutureProvider((ref) async {
 });
 
 // Work Orders for Current Technician Provider (by email)
-final workOrdersByEmailProvider = FutureProvider.family<List<dynamic>, String>((ref, email) async {
-  final workOrdersService = ref.watch(workOrdersServiceProvider);
+final workOrdersByEmailProvider = FutureProvider.family<List<WorkOrder>, String>((ref, email) async {
+  final workOrdersService = ref.read(workOrdersServiceProvider);
+  return await workOrdersService.getWorkOrdersForTechnicianByEmail(email);
+});
+
+// Active work orders (open and in-progress only)
+final activeWorkOrdersByEmailProvider = FutureProvider.family<List<WorkOrder>, String>((ref, email) async {
+  final workOrdersService = ref.read(workOrdersServiceProvider);
   return await workOrdersService.getWorkOrdersForTechnicianByEmail(email);
 });
 
@@ -55,8 +62,8 @@ final completedJobsCountProvider = FutureProvider.family<int, String>((ref, emai
 });
 
 // Work Orders for Current Technician Provider (by contact ID)
-final workOrdersProvider = FutureProvider.family<List<dynamic>, String>((ref, technicianId) async {
-  final workOrdersService = ref.watch(workOrdersServiceProvider);
+final workOrdersProvider = FutureProvider.family<List<WorkOrder>, String>((ref, technicianId) async {
+  final workOrdersService = ref.read(workOrdersServiceProvider);
   return await workOrdersService.getWorkOrdersForTechnician(technicianId);
 });
 
