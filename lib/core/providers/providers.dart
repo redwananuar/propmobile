@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/auth_service.dart';
 import '../services/work_orders_service.dart';
 import '../services/contacts_service.dart';
+import '../services/profiles_service.dart';
 import '../models/work_order.dart';
 import '../models/contact.dart';
 
@@ -20,6 +21,35 @@ final contactsServiceProvider = Provider<ContactsService>((ref) {
   return ContactsService();
 });
 
+// Profiles Service Provider
+final profilesServiceProvider = Provider<ProfilesService>((ref) {
+  return ProfilesService();
+});
+
+// Avatar URL Provider (by email)
+final avatarUrlByEmailProvider = FutureProvider.family<String?, String>((ref, email) async {
+  final profilesService = ref.watch(profilesServiceProvider);
+  return await profilesService.getAvatarUrlByEmail(email);
+});
+
+// Technician Profile Provider (by email)
+final technicianProfileByEmailProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, email) async {
+  final profilesService = ref.watch(profilesServiceProvider);
+  return await profilesService.getTechnicianByEmail(email);
+});
+
+// Technician Name Provider (by email)
+final technicianNameByEmailProvider = FutureProvider.family<String?, String>((ref, email) async {
+  final profilesService = ref.watch(profilesServiceProvider);
+  return await profilesService.getTechnicianNameByEmail(email);
+});
+
+// Technicians List Provider
+final techniciansProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final profilesService = ref.watch(profilesServiceProvider);
+  return await profilesService.getTechnicians();
+});
+
 // Current User Provider
 final currentUserProvider = StreamProvider((ref) {
   final authService = ref.watch(authServiceProvider);
@@ -32,10 +62,10 @@ final currentUserTechnicianProvider = FutureProvider((ref) async {
   return await authService.isCurrentUserTechnician();
 });
 
-// Current User Technician ID Provider
-final currentUserTechnicianIdProvider = FutureProvider((ref) async {
+// Current User Technician Email Provider
+final currentUserTechnicianEmailProvider = FutureProvider((ref) async {
   final authService = ref.watch(authServiceProvider);
-  return await authService.getCurrentUserTechnicianId();
+  return await authService.getCurrentUserTechnicianEmail();
 });
 
 // Work Orders for Current Technician Provider (by email)
@@ -62,28 +92,10 @@ final completedJobsCountProvider = FutureProvider.family<int, String>((ref, emai
   return await workOrdersService.getCompletedJobsCountByEmail(email);
 });
 
-// Work Orders for Current Technician Provider (by contact ID)
-final workOrdersProvider = FutureProvider.family<List<WorkOrder>, String>((ref, technicianId) async {
-  final workOrdersService = ref.read(workOrdersServiceProvider);
-  return await workOrdersService.getWorkOrdersForTechnician(technicianId);
-});
-
-// Technicians Provider
-final techniciansProvider = FutureProvider<List<Contact>>((ref) async {
-  final contactsService = ref.watch(contactsServiceProvider);
-  return await contactsService.getTechnicians();
-});
-
 // Contact by ID Provider
 final contactByIdProvider = FutureProvider.family<Contact?, String>((ref, contactId) async {
   final contactsService = ref.watch(contactsServiceProvider);
   return await contactsService.getContactById(contactId);
-});
-
-// Technician by Email Provider
-final technicianByEmailProvider = FutureProvider.family<Contact?, String>((ref, email) async {
-  final contactsService = ref.watch(contactsServiceProvider);
-  return await contactsService.getTechnicianByEmail(email);
 });
 
 // Work Order by ID Provider

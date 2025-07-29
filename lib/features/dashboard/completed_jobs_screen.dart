@@ -59,7 +59,7 @@ class CompletedJobsScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(16),
                   itemCount: completedJobs.length,
                   itemBuilder: (context, index) {
-                    final workOrder = completedJobs[index] as WorkOrder;
+                    final workOrder = completedJobs[index];
                     return _CompletedJobCard(workOrder: workOrder);
                   },
                 ),

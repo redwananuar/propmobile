@@ -84,8 +84,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         password: _passwordController.text,
       );
       
-      // AuthWrapper will automatically handle navigation
-      // No need for manual navigation here
+      // The AuthWrapper will automatically handle navigation based on auth state changes
       
     } catch (e) {
       if (mounted) {

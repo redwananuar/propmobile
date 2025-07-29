@@ -7,6 +7,7 @@ class Contact {
   final String? phone;
   final String? address;
   final String? notes;
+  final String? photoUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -19,6 +20,7 @@ class Contact {
     this.phone,
     this.address,
     this.notes,
+    this.photoUrl,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -36,6 +38,7 @@ class Contact {
       phone: json['phone'] as String?,
       address: json['address'] as String?,
       notes: json['notes'] as String?,
+      photoUrl: json['photoUrl'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -51,6 +54,7 @@ class Contact {
       'phone': phone,
       'address': address,
       'notes': notes,
+      'photoUrl': photoUrl,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -65,6 +69,7 @@ class Contact {
     String? phone,
     String? address,
     String? notes,
+    String? photoUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -77,6 +82,7 @@ class Contact {
       phone: phone ?? this.phone,
       address: address ?? this.address,
       notes: notes ?? this.notes,
+      photoUrl: photoUrl ?? this.photoUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

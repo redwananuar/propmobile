@@ -1,24 +1,25 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
 import '../models/work_order.dart';
-import 'contacts_service.dart';
+import 'profiles_service.dart';
 
 class WorkOrdersService {
   final SupabaseClient _supabase = SupabaseConfig.client;
-  final ContactsService _contactsService = ContactsService();
+  final ProfilesService _profilesService = ProfilesService();
 
   // Get work orders for a technician by email (only open and in-progress)
   Future<List<WorkOrder>> getWorkOrdersForTechnicianByEmail(String email) async {
     try {
-      final contactId = await _contactsService.getTechnicianContactId(email);
-      if (contactId == null) {
-        throw Exception('Technician not found');
+      // First verify the technician exists in profiles table
+      final technician = await _profilesService.getTechnicianByEmail(email);
+      if (technician == null) {
+        throw Exception('Technician not found in profiles');
       }
 
       final response = await _supabase
           .from('work_order')
           .select()
-          .eq('technicianId', contactId)
+          .eq('technicianEmail', email)
           .inFilter('status', ['open', 'in-progress']) // Only open and in-progress jobs
           .order('createdAt', ascending: false);
 
@@ -30,29 +31,19 @@ class WorkOrdersService {
     }
   }
 
-  Future<List<WorkOrder>> getWorkOrdersForTechnician(String technicianId) async {
+  // Get completed jobs by email
+  Future<List<WorkOrder>> getCompletedJobsByEmail(String email) async {
     try {
+      // First verify the technician exists in profiles table
+      final technician = await _profilesService.getTechnicianByEmail(email);
+      if (technician == null) {
+        throw Exception('Technician not found in profiles');
+      }
+
       final response = await _supabase
           .from('work_order')
           .select()
-          .eq('technicianId', technicianId)
-          .order('createdAt', ascending: false);
-
-      return (response as List)
-          .map((json) => WorkOrder.fromJson(json))
-          .toList();
-    } catch (e) {
-      throw Exception('Failed to fetch work orders: $e');
-    }
-  }
-
-  // Get completed jobs for technician
-  Future<List<WorkOrder>> getCompletedJobsForTechnician(String technicianId) async {
-    try {
-      final response = await _supabase
-          .from('work_order')
-          .select()
-          .eq('technicianId', technicianId)
+          .eq('technicianEmail', email)
           .eq('status', 'completed')
           .order('resolvedAt', ascending: false);
 
@@ -64,26 +55,19 @@ class WorkOrdersService {
     }
   }
 
-  // Get completed jobs by email
-  Future<List<WorkOrder>> getCompletedJobsByEmail(String email) async {
+  // Get total completed jobs count by email
+  Future<int> getCompletedJobsCountByEmail(String email) async {
     try {
-      final contactId = await _contactsService.getTechnicianContactId(email);
-      if (contactId == null) {
-        throw Exception('Technician not found');
+      // First verify the technician exists in profiles table
+      final technician = await _profilesService.getTechnicianByEmail(email);
+      if (technician == null) {
+        return 0; // Return 0 if technician not found
       }
-      return await getCompletedJobsForTechnician(contactId);
-    } catch (e) {
-      throw Exception('Failed to fetch completed jobs: $e');
-    }
-  }
 
-  // Get total completed jobs count
-  Future<int> getCompletedJobsCount(String technicianId) async {
-    try {
       final response = await _supabase
           .from('work_order')
           .select()
-          .eq('technicianId', technicianId)
+          .eq('technicianEmail', email)
           .eq('status', 'completed');
 
       return (response as List).length;
@@ -92,20 +76,8 @@ class WorkOrdersService {
     }
   }
 
-  // Get total completed jobs count by email
-  Future<int> getCompletedJobsCountByEmail(String email) async {
-    try {
-      final contactId = await _contactsService.getTechnicianContactId(email);
-      if (contactId == null) {
-        throw Exception('Technician not found');
-      }
-      return await getCompletedJobsCount(contactId);
-    } catch (e) {
-      throw Exception('Failed to fetch completed jobs count: $e');
-    }
-  }
-
-  Future<WorkOrder> getWorkOrderById(String workOrderId) async {
+  // Get work order by ID
+  Future<WorkOrder?> getWorkOrderById(String workOrderId) async {
     try {
       final response = await _supabase
           .from('work_order')
@@ -115,65 +87,70 @@ class WorkOrdersService {
 
       return WorkOrder.fromJson(response);
     } catch (e) {
-      throw Exception('Failed to fetch work order: $e');
+      return null;
     }
   }
 
-  Future<WorkOrder> updateWorkOrder({
-    required String workOrderId,
-    required WorkOrderStatus status,
+  // Update work order status
+  Future<void> updateWorkOrderStatus(String workOrderId, String status) async {
+    try {
+      await _supabase
+          .from('work_order')
+          .update({'status': status})
+          .eq('id', workOrderId);
+    } catch (e) {
+      throw Exception('Failed to update work order status: $e');
+    }
+  }
+
+  // Update work order with photo
+  Future<void> updateWorkOrderWithPhoto(String workOrderId, String photoUrl) async {
+    try {
+      await _supabase
+          .from('work_order')
+          .update({
+            'photoUrl': photoUrl,
+            'status': 'completed',
+            'resolvedAt': DateTime.now().toIso8601String(),
+          })
+          .eq('id', workOrderId);
+    } catch (e) {
+      throw Exception('Failed to update work order with photo: $e');
+    }
+  }
+
+  // Create new work order
+  Future<void> createWorkOrder({
+    required String title,
+    required String description,
+    required String technicianEmail,
+    String? propertyUnit,
+    String? priority,
+    DateTime? scheduledDate,
     String? comment,
-    String? photoUrl,
   }) async {
     try {
-      final updateData = <String, dynamic>{
-        'status': status.databaseValue,
-      };
-      
-      if (comment != null) {
-        updateData['comment'] = comment;
-      }
-      
-      if (photoUrl != null) {
-        updateData['photoUrl'] = photoUrl;
-      }
-      
-      if (status == WorkOrderStatus.completed) {
-        final now = DateTime.now();
-        updateData['resolvedAt'] = now.toIso8601String();
-        print('Setting resolvedAt: ${now.toIso8601String()}'); // Debug
+      // First verify the technician exists in profiles table
+      final technician = await _profilesService.getTechnicianByEmail(technicianEmail);
+      if (technician == null) {
+        throw Exception('Technician not found in profiles');
       }
 
-      final response = await _supabase
+      await _supabase
           .from('work_order')
-          .update(updateData)
-          .eq('id', workOrderId)
-          .select()
-          .single();
-
-      return WorkOrder.fromJson(response);
+          .insert({
+            'title': title,
+            'description': description,
+            'technicianEmail': technicianEmail,
+            'propertyUnit': propertyUnit,
+            'priority': priority,
+            'scheduledDate': scheduledDate?.toIso8601String(),
+            'comment': comment,
+            'status': 'open',
+            'createdAt': DateTime.now().toIso8601String(),
+          });
     } catch (e) {
-      throw Exception('Failed to update work order: $e');
-    }
-  }
-
-  Future<List<WorkOrder>> getWorkOrdersByStatus(
-    String technicianId,
-    WorkOrderStatus status,
-  ) async {
-    try {
-      final response = await _supabase
-          .from('work_order')
-          .select()
-          .eq('technicianId', technicianId)
-          .eq('status', status.databaseValue)
-          .order('createdAt', ascending: false);
-
-      return (response as List)
-          .map((json) => WorkOrder.fromJson(json))
-          .toList();
-    } catch (e) {
-      throw Exception('Failed to fetch work orders by status: $e');
+      throw Exception('Failed to create work order: $e');
     }
   }
 } 

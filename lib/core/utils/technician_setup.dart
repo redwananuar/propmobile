@@ -4,22 +4,22 @@ import '../config/supabase_config.dart';
 class TechnicianSetup {
   static final SupabaseClient _supabase = SupabaseConfig.client;
 
-  // Get all technician IDs from work orders
-  static Future<List<String>> getTechnicianIds() async {
+  // Get all technician emails from work orders
+  static Future<List<String>> getTechnicianEmails() async {
     try {
       final response = await _supabase
           .from('work_order')
-          .select('technicianId')
-          .not('technicianId', 'is', null);
+          .select('technicianEmail')
+          .not('technicianEmail', 'is', null);
       
-      final Set<String> uniqueIds = {};
+      final Set<String> uniqueEmails = {};
       for (final item in response as List) {
-        uniqueIds.add(item['technicianId'] as String);
+        uniqueEmails.add(item['technicianEmail'] as String);
       }
       
-      return uniqueIds.toList();
+      return uniqueEmails.toList();
     } catch (e) {
-      print('Error getting technician IDs: $e');
+      print('Error getting technician emails: $e');
       return [];
     }
   }
@@ -44,7 +44,6 @@ class TechnicianSetup {
   static Future<bool> createTechnicianUser({
     required String email,
     required String password,
-    String? technicianId,
   }) async {
     try {
       final response = await _supabase.auth.admin.createUser(
@@ -72,13 +71,13 @@ class TechnicianSetup {
    - Go to your Supabase Dashboard
    - Navigate to Authentication → Users
    - Create users for each technician
-   - Use these technician IDs from your data:
-     * dadff537-b7fb-4996-8eda-b9c402aa8196
-     * 6b0d7ce1-80fe-4c57-a6d4-eb17d21defa1
-     * 052d37ee-7ecf-41f8-96e0-2b81baf2b470
+   - Use these technician emails from your data:
+     * technician1@example.com
+     * technician2@example.com
+     * technician3@example.com
 
 2. ALTERNATIVE: Update work_order table
-   - Replace technicianId with actual auth user IDs
+   - Replace technicianEmail with actual auth user emails
    - Or create a mapping table
 
 3. TEST LOGIN:

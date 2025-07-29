@@ -39,13 +39,23 @@ class _WorkOrderDetailScreenState extends ConsumerState<WorkOrderDetailScreen> {
     });
 
     try {
-              final workOrdersService = ref.read(workOrdersServiceProvider);
-        await workOrdersService.updateWorkOrder(
-          workOrderId: _currentWorkOrder.id,
-          status: _currentWorkOrder.status,
-          comment: _commentController.text,
-          photoUrl: _photoUrl,
+      final workOrdersService = ref.read(workOrdersServiceProvider);
+      
+      // Update status if changed
+      if (_currentWorkOrder.status != widget.workOrder.status) {
+        await workOrdersService.updateWorkOrderStatus(
+          _currentWorkOrder.id,
+          _currentWorkOrder.status.databaseValue,
         );
+      }
+
+      // Update with photo if provided
+      if (_photoUrl != null) {
+        await workOrdersService.updateWorkOrderWithPhoto(
+          _currentWorkOrder.id,
+          _photoUrl!,
+        );
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

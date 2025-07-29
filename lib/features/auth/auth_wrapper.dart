@@ -1,15 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../dashboard/dashboard_screen.dart';
+import '../splash/splash_screen.dart';
 import 'login_screen.dart';
 import '../../core/providers/providers.dart';
 
-class AuthWrapper extends ConsumerWidget {
+class AuthWrapper extends ConsumerStatefulWidget {
   const AuthWrapper({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends ConsumerState<AuthWrapper> {
+  bool _isInitializing = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Show splash screen for a minimum time
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          _isInitializing = false;
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final currentUser = ref.watch(currentUserProvider);
+    
+    // Show splash screen during initial loading
+    if (_isInitializing) {
+      return const SplashScreen();
+    }
     
     return currentUser.when(
       data: (user) {

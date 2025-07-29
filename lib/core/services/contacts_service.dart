@@ -101,4 +101,16 @@ class ContactsService {
       throw Exception('Failed to fetch contacts by type: $e');
     }
   }
+
+  // Update contact's photo URL
+  Future<void> updateContactPhotoUrl(String contactId, String photoUrl) async {
+    try {
+      await _supabase
+          .from('contacts')
+          .update({'photoUrl': photoUrl})
+          .eq('id', contactId);
+    } catch (e) {
+      throw Exception('Failed to update contact photo: $e');
+    }
+  }
 } 

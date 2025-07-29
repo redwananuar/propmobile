@@ -9,7 +9,7 @@ class WorkOrder {
   final DateTime? scheduledDate;
   final String? scheduledStart;
   final String? scheduledEnd;
-  final String technicianId;
+  final String technicianEmail;
   final DateTime createdAt;
   final DateTime? resolvedAt;
   final String? complaintId;
@@ -28,7 +28,7 @@ class WorkOrder {
     this.scheduledDate,
     this.scheduledStart,
     this.scheduledEnd,
-    required this.technicianId,
+    required this.technicianEmail,
     required this.createdAt,
     this.resolvedAt,
     this.complaintId,
@@ -54,7 +54,7 @@ class WorkOrder {
           : null,
       scheduledStart: json['scheduledStart'] as String?,
       scheduledEnd: json['scheduledEnd'] as String?,
-      technicianId: json['technicianId'] as String,
+      technicianEmail: json['technicianEmail'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
       resolvedAt: json['resolvedAt'] != null 
           ? DateTime.parse(json['resolvedAt'] as String)
@@ -78,7 +78,7 @@ class WorkOrder {
       'scheduledDate': scheduledDate?.toIso8601String(),
       'scheduledStart': scheduledStart,
       'scheduledEnd': scheduledEnd,
-      'technicianId': technicianId,
+      'technicianEmail': technicianEmail,
       'createdAt': createdAt.toIso8601String(),
       'resolvedAt': resolvedAt?.toIso8601String(),
       'complaintId': complaintId,
@@ -99,7 +99,7 @@ class WorkOrder {
     DateTime? scheduledDate,
     String? scheduledStart,
     String? scheduledEnd,
-    String? technicianId,
+    String? technicianEmail,
     DateTime? createdAt,
     DateTime? resolvedAt,
     String? complaintId,
@@ -118,7 +118,7 @@ class WorkOrder {
       scheduledDate: scheduledDate ?? this.scheduledDate,
       scheduledStart: scheduledStart ?? this.scheduledStart,
       scheduledEnd: scheduledEnd ?? this.scheduledEnd,
-      technicianId: technicianId ?? this.technicianId,
+      technicianEmail: technicianEmail ?? this.technicianEmail,
       createdAt: createdAt ?? this.createdAt,
       resolvedAt: resolvedAt ?? this.resolvedAt,
       complaintId: complaintId ?? this.complaintId,

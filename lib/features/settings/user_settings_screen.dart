@@ -16,7 +16,6 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _isChangingPassword = false;
   bool _isUpdatingAvatar = false;
-  String? _avatarUrl;
 
   @override
   void dispose() {
@@ -33,13 +32,25 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
 
     try {
       // TODO: Implement actual photo upload to Supabase Storage
-      // For now, we'll simulate the upload
+      // For now, we'll simulate the upload and update the profile record
       await Future.delayed(const Duration(seconds: 2));
       
-      setState(() {
-        _avatarUrl = 'https://example.com/avatar.jpg';
-      });
-
+      // Get the current user
+      final currentUser = ref.read(currentUserProvider);
+      final user = currentUser.value;
+      if (user != null) {
+        final profilesService = ref.read(profilesServiceProvider);
+        
+        // Simulate a photo URL (in real implementation, this would be the uploaded photo URL)
+        const avatarUrl = 'https://example.com/avatar.jpg';
+        
+        // Update the profile's avatar_url in the database
+        await profilesService.updateAvatarUrl(user.email!, avatarUrl);
+        
+        // Invalidate the avatar provider to refresh the UI
+        ref.invalidate(avatarUrlByEmailProvider(user.email!));
+      }
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -140,7 +151,8 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
           );
         }
 
-        final technicianAsync = ref.watch(technicianByEmailProvider(user.email!));
+        final technicianProfileAsync = ref.watch(technicianProfileByEmailProvider(user.email!));
+        final avatarUrlAsync = ref.watch(avatarUrlByEmailProvider(user.email!));
 
         return Scaffold(
           appBar: AppBar(
@@ -154,108 +166,160 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // User Profile Card
-                technicianAsync.when(
+                technicianProfileAsync.when(
                   data: (technician) {
-                    final technicianName = technician?.name ?? 'Technician';
+                    final technicianName = technician?['name'] as String? ?? 'Technician';
                     final technicianEmail = user.email ?? '';
                     
-                    return Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
+                    return avatarUrlAsync.when(
+                      data: (avatarUrl) => Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
-                          gradient: LinearGradient(
-                            colors: [Colors.blue[50]!, Colors.blue[100]!],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
                         ),
-                        child: Column(
-                          children: [
-                            // Avatar Section
-                            Stack(
-                              children: [
-                                CircleAvatar(
-                                  radius: 50,
-                                  backgroundColor: Colors.blue[200],
-                                  backgroundImage: _avatarUrl != null 
-                                      ? NetworkImage(_avatarUrl!) 
-                                      : null,
-                                  child: _avatarUrl == null
-                                      ? Icon(
-                                          Icons.person,
-                                          size: 50,
-                                          color: Colors.blue[700],
-                                        )
-                                      : null,
-                                ),
-                                Positioned(
-                                  bottom: 0,
-                                  right: 0,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue[600],
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: IconButton(
-                                      onPressed: _isUpdatingAvatar ? null : _updateAvatar,
-                                      icon: _isUpdatingAvatar
-                                          ? const SizedBox(
-                                              width: 20,
-                                              height: 20,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            gradient: LinearGradient(
+                              colors: [Colors.blue[50]!, Colors.blue[100]!],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              // Avatar Section
+                              Stack(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 50,
+                                    backgroundColor: Colors.blue[200],
+                                    backgroundImage: avatarUrl != null 
+                                        ? NetworkImage(avatarUrl) 
+                                        : null,
+                                    child: avatarUrl == null
+                                        ? Icon(
+                                            Icons.person,
+                                            size: 60,
+                                            color: Colors.blue[700],
+                                          )
+                                        : null,
+                                  ),
+                                  Positioned(
+                                    bottom: 0,
+                                    right: 0,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue[600],
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: IconButton(
+                                        onPressed: _isUpdatingAvatar ? null : _updateAvatar,
+                                        icon: _isUpdatingAvatar
+                                            ? const SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                ),
+                                              )
+                                            : const Icon(
+                                                Icons.camera_alt,
+                                                color: Colors.white,
+                                                size: 20,
                                               ),
-                                            )
-                                          : const Icon(
-                                              Icons.camera_alt,
-                                              color: Colors.white,
-                                              size: 20,
-                                            ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            
-                            // User Details
-                            Text(
-                              technicianName,
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue[700],
+                                ],
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              technicianEmail,
-                              style: TextStyle(
-                                color: Colors.blue[600],
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Colors.blue[200],
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Text(
-                                'Technician',
-                                style: TextStyle(
-                                  color: Colors.blue[700],
+                              const SizedBox(height: 16),
+                              
+                              // User Details
+                              Text(
+                                technicianName,
+                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                                   fontWeight: FontWeight.bold,
+                                  color: Colors.blue[700],
                                 ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 4),
+                              Text(
+                                technicianEmail,
+                                style: TextStyle(
+                                  color: Colors.blue[600],
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[200],
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Text(
+                                  'Technician',
+                                  style: TextStyle(
+                                    color: Colors.blue[700],
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      loading: () => Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          child: const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        ),
+                      ),
+                      error: (_, __) => Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            children: [
+                              CircleAvatar(
+                                radius: 50,
+                                backgroundColor: Colors.blue[200],
+                                child: Icon(
+                                  Icons.person,
+                                  size: 60,
+                                  color: Colors.blue[700],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'User',
+                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue[700],
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                user.email ?? '',
+                                style: TextStyle(
+                                  color: Colors.blue[600],
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
@@ -286,7 +350,7 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
                             backgroundColor: Colors.blue[200],
                             child: Icon(
                               Icons.person,
-                              size: 50,
+                              size: 60,
                               color: Colors.blue[700],
                             ),
                           ),
@@ -458,7 +522,7 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
                           icon: Icons.person_add,
                           label: 'Account Created',
                           value: user.createdAt != null 
-                              ? _formatDate(DateTime.parse(user.createdAt!))
+                              ? _formatDate(DateTime.parse(user.createdAt))
                               : 'Not available',
                         ),
                       ],

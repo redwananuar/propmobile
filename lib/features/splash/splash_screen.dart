@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers/providers.dart';
-import '../auth/login_screen.dart';
-import '../dashboard/dashboard_screen.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -55,75 +53,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     await _logoController.forward();
     await Future.delayed(const Duration(milliseconds: 500));
     await _fadeController.forward();
-    
-    // Check authentication status after animations
-    _checkAuthStatus();
-  }
-
-  void _checkAuthStatus() async {
-    final currentUser = ref.read(currentUserProvider);
-    
-    await currentUser.when(
-      data: (user) async {
-        await Future.delayed(const Duration(milliseconds: 500));
-        if (mounted) {
-          if (user != null) {
-            Navigator.of(context).pushReplacement(
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) =>
-                    const DashboardScreen(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(opacity: animation, child: child);
-                },
-                transitionDuration: const Duration(milliseconds: 500),
-              ),
-            );
-          } else {
-            Navigator.of(context).pushReplacement(
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) =>
-                    const LoginScreen(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(opacity: animation, child: child);
-                },
-                transitionDuration: const Duration(milliseconds: 500),
-              ),
-            );
-          }
-        }
-      },
-      loading: () async {
-        await Future.delayed(const Duration(milliseconds: 1000));
-        if (mounted) {
-          Navigator.of(context).pushReplacement(
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) =>
-                  const LoginScreen(),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return FadeTransition(opacity: animation, child: child);
-              },
-              transitionDuration: const Duration(milliseconds: 500),
-            ),
-          );
-        }
-      },
-      error: (error, stack) async {
-        print('Auth error in splash: $error');
-        await Future.delayed(const Duration(milliseconds: 500));
-        if (mounted) {
-          Navigator.of(context).pushReplacement(
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) =>
-                  const LoginScreen(),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return FadeTransition(opacity: animation, child: child);
-              },
-              transitionDuration: const Duration(milliseconds: 500),
-            ),
-          );
-        }
-      },
-    );
   }
 
   @override

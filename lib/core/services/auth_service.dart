@@ -1,10 +1,10 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
-import 'contacts_service.dart';
+import 'profiles_service.dart';
 
 class AuthService {
   final SupabaseClient _supabase = SupabaseConfig.client;
-  final ContactsService _contactsService = ContactsService();
+  final ProfilesService _profilesService = ProfilesService();
 
   User? get currentUser => _supabase.auth.currentUser;
   bool get isAuthenticated => currentUser != null;
@@ -25,7 +25,7 @@ class AuthService {
       );
 
       // Then validate if the user is a technician
-      final isTechnician = await _contactsService.isTechnician(email);
+      final isTechnician = await _profilesService.isTechnician(email);
       if (!isTechnician) {
         // Sign out if not a technician
         await _supabase.auth.signOut();
@@ -51,8 +51,8 @@ class AuthService {
     required String password,
   }) async {
     try {
-      // First check if the email exists in contacts as a technician
-      final isTechnician = await _contactsService.isTechnician(email);
+      // First check if the email exists in profiles as a technician
+      final isTechnician = await _profilesService.isTechnician(email);
       if (!isTechnician) {
         throw Exception('Access denied. Only existing technicians can register.');
       }
@@ -70,7 +70,7 @@ class AuthService {
   Future<void> resetPassword(String email) async {
     try {
       // Validate that the email belongs to a technician
-      final isTechnician = await _contactsService.isTechnician(email);
+      final isTechnician = await _profilesService.isTechnician(email);
       if (!isTechnician) {
         throw Exception('Access denied. Only technicians can reset passwords.');
       }
@@ -87,19 +87,19 @@ class AuthService {
       final email = currentUserEmail;
       if (email == null) return false;
       
-      return await _contactsService.isTechnician(email);
+      return await _profilesService.isTechnician(email);
     } catch (e) {
       return false;
     }
   }
 
-  // Get current user's technician ID
-  Future<String?> getCurrentUserTechnicianId() async {
+  // Get current user's technician email
+  Future<String?> getCurrentUserTechnicianEmail() async {
     try {
       final user = _supabase.auth.currentUser;
       if (user == null) return null;
       
-      return await _contactsService.getTechnicianContactId(user.email!);
+      return user.email;
     } catch (e) {
       return null;
     }
